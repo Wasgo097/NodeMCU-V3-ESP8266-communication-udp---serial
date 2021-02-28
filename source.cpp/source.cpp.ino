@@ -1,64 +1,51 @@
-#define READER
-#ifdef WRITER
-//void setup() {  
-//  Serial.begin(115200);
-//}
-//const int buffer_size=255;
-//char buffer[buffer_size];
-//void loop() {  
-//  if(Serial.available()>0){
-//    int len=Serial.readBytesUntil('\n', buffer, buffer_size);
-//    if(len<=buffer_size)buffer[len]='\0';
-//    Serial.write(buffer);
-//    //Serial.flush();
-//  }
-//}
-char str[4];
-void setup() {
-  Serial.begin(9600);
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+
+const char* ssid = "********";
+const char* password = "********";
+
+WiFiUDP Udp;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+char  replyPacket[] = "Hi there! Got the message :-)";  // a reply string to send back
+
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println();
+
+  Serial.printf("Connecting to %s ", ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(" connected");
+
+  Udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 }
-void loop() {
-  int value=1234; //this would be much more exciting if it was a sensor value  
-  itoa(value, str, 10); //Turn value into a character array
-  Serial.write(str, 4);
-}
-#endif
-#ifdef READER
-//void setup() {  
-//  Serial.begin(115200);
-//  Serial1.begin(115200);
-//  pinMode(LED_BUILTIN, OUTPUT); 
-//  digitalWrite(LED_BUILTIN, LOW);
-//}
-//const int buffer_size=255;
-//char buffer[buffer_size];
-//void loop() {  
-//  if(Serial.available()>0){
-//    int len=Serial.readBytesUntil('\n', buffer, buffer_size);
-//    if(len<=buffer_size)buffer[len]='\0';
-//    if(buffer[0]=='0')
-//      digitalWrite(LED_BUILTIN, LOW);
-//    else if(buffer[0]=='1')
-//      digitalWrite(LED_BUILTIN, HIGH);
-//    Serial1.println(buffer);
-//  }
-//}
-char str[4];
-void setup() {
-  Serial.begin(9600);
-  Serial1.begin(9600);
-}
-void loop() {
-  int i=0;
-  if (Serial1.available()) {
-    delay(100); //allows all serial sent to be received together
-    while(Serial1.available() && i<4) {
-      str[i++] = Serial1.read();
+
+
+void loop()
+{
+  int packetSize = Udp.parsePacket();
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+    int len = Udp.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
     }
-    str[i++]='\0';
-  }
-  if(i>0) {
-    Serial.println(str);
+    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+
+    // send back a reply, to the IP address and port we got the packet from
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.write(replyPacket);
+    Udp.endPacket();
   }
 }
-#endif
