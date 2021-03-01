@@ -7,18 +7,25 @@ WiFiUDP Udp;
 const unsigned int localUdpPort = 4210;
 const int buffer_size=255;
 char Buffer[buffer_size]; 
-void setup()
-{
+void setup(){
   Serial.begin(115200);
+#ifdef Debug
   Serial.printf("Connecting to %s ", ssid);
+#endif
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)  {
+  while (WiFi.status() != WL_CONNECTED){
     delay(1000);
+#ifdef Debug
     Serial.print(".");
+#endif
   }
+#ifdef Debug
   Serial.println(" connected");
+#endif
   Udp.begin(localUdpPort);
+#ifdef Debug
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+#endif
 }
 void FromWiFiToSerial(){
   int packetSize = Udp.parsePacket();
@@ -47,14 +54,13 @@ void FromSerialToWifi(){
       Buffer[len]='\0';
 #ifdef Debug
     Serial.println(Buffer);
-#else
+#endif
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
     Udp.write(Buffer);
     Udp.endPacket();
     }
 }
-void loop()
-{
+void loop(){
   FromWiFiToSerial();
   FromSerialToWifi();
 }
