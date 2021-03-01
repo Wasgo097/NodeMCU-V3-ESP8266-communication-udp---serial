@@ -40,9 +40,9 @@ void FromWiFiToSerial(){
     Serial.printf("UDP packet contents: %s\n", Buffer);
 #endif
 #ifdef Debug
-    Serial.write(Buffer);
-#else
     Serial.println(Buffer);
+#else
+    Serial.write(Buffer);
 #endif
     Serial.flush();
   }
